@@ -1,9 +1,11 @@
-# AzGovViz v4_minor_20201101_0
-# First things first: edit line 20 and line 21 
-# https://github.com/JulianHayward/Azure-MG-Sub-Governance-Reporting
-# Also check https://www.azadvertizer.net to keep up with the pace on Azure Governance capabilities such as Azure Policies, Policy Initiatives, Policy Aliases and RBAC Roles
+# AzGovViz v4_minor_20210126_3
+# First things first: 
+# 1. edit line 30 and line 31 
+# 2. check line 44 if branch 'master' is applicable 
+# Documentation: https://github.com/JulianHayward/Azure-MG-Sub-Governance-Reporting
+# Also check https://www.azadvertizer.net - AzAdvertizer helps you to keep up with the pace by providing overview and insights on new releases and changes/updates for Azure Governance capabilities such as Azure Policy's policy definitions, initiatives (set definitions), aliases and Azure RBAC's role definitions and resource provider operations.
 # 
-# Parameters reference (use in line 59)
+# Parameters reference (use in line 71)
 # LimitCriticalPercentage | default is '80' | example: -LimitCriticalPercentage 90  | WhatDoesItDo? marks capabilities that approch limits e.g. limit 100, usage 80 will mark with warning
 # SubscriptionQuotaIdWhitelist | default is 'undefined'; separator is '\' | example: -SubscriptionQuotaIdWhitelist MSDN_\EnterpriseAgreement_ | WhatDoesItDo? processes only subscriptions that startWith the given QuotaIds
 # HierarchyMapOnly | switch | example: -HierarchyMapOnly | WhatDoesItDo? only creates the Hierarchy Tree
@@ -11,6 +13,14 @@
 # NoASCSecureScore | switch | example: -NoASCSecureScore | WhatDoesItDo? disables ASC Secure Score request for subscriptions (ASC Score API currently in preview)
 # NoResourceProvidersDetailed | switch | example: -NoResourceProvidersDetailed | WhatDoesItDo? disables 'ResourceProvider Detailed' output for TenantSummary (compute intensive)
 # CsvDelimiter | example: -CsvDelimiter "," | WhatDoesItDo? the world is split into two kind of delimiters - comma and semicolon - choose yours
+# NoPolicyComplianceStates | example: -NoPolicyComplianceStates | WhatDoesItDo? will not query policy compliance states
+# NoResourceDiagnosticsPolicyLifecycle | example: -NoResourceDiagnosticsPolicyLifecycle | WhatDoesItDo? will not create Resource Diagnostics Policy Lifecycle recommendations
+# NoAADGroupsResolveMembers | example: -NoAADGroupsResolveMembers | WhatDoesItDo? will not resolve Azure Active Directory Group memberships for Role assignments where identity type is 'Group'
+# NoServicePrincipalResolve | example: -NoServicePrincipalResolve | WhatDoesItDo? disables resolving ServicePrincipals
+# ServicePrincipalExpiryWarningDays | example: -ServicePrincipalExpiryWarningDays 21 | WhatDoesItDo? define warning period for Service Principal secret and certificate expiry; default is 14 days
+# NoAzureConsumption | example: -NoAzureConsumption | WhatDoesItDo? Azure Consumption data will not be collected/reported
+# AzureConsumptionPeriod | example: -AzureConsumptionPeriod 7 | WhatDoesItDo? define for which time period Azure Consumption data should be gathered; default is 1 day
+# NoAzureConsumptionReportExportToCSV | example: -NoAzureConsumptionReportExportToCSV | WhatDoesItDo? Azure Consumption data will not be exported (CSV)
 
 trigger: none
 
@@ -31,14 +41,14 @@ schedules:
   always: true
   branches:
     include:
-    - master
+    - master #check if applicable (master, main, etc.)!
 
 jobs:
 - job: AzGovViz  
   timeoutInMinutes: 0
 
   pool:
-    vmImage: 'ubuntu-latest'
+    vmImage: 'ubuntu-18.04'
 
   steps:
   - powershell: |
@@ -49,15 +59,19 @@ jobs:
       if(!(test-path $(System.DefaultWorkingDirectory)/$(WikiDir))){New-Item -ItemType Directory -Force -Path $(System.DefaultWorkingDirectory)/$(WikiDir)}
       write-host "install Azure Powershell Module 'Az.ResourceGraph'"
       Install-Module -Name Az.ResourceGraph -Force
+      $installedAzResourceGraphInfo = Get-InstalledModule -name Az.ResourceGraph
+      $installedAzResourceGraphVersion = "unknown"
+      if ($installedAzResourceGraphInfo){ $installedAzResourceGraphVersion = $installedAzResourceGraphInfo.Version }
+      if ($installedAzResourceGraphVersion -ne "unknown"){ Write-Host "Installed Az.ResourceGraph version: $installedAzResourceGraphVersion" }else{ Write-Host "Az.ResourceGraph was not installed" }
     displayName: 'Ensure AzGovViz prerequisites'
     env:
       workingdirectory: $(Agent.BuildDirectory)
   - task: AzurePowerShell@4
     inputs:
       azureSubscription: '$(ServiceConnection)'
-      ScriptPath: '$(System.DefaultWorkingDirectory)/$(ScriptDir)/$(Script)'
-      ScriptArguments: '-ManagementGroupId $(ManagementGroupId) -OutputPath $(WikiDir) -CsvDelimiter "$(CsvDelimiter)" -AzureDevOpsWikiAsCode -SubscriptionQuotaIdWhitelist $(SubscriptionQuotaIdWhitelist)'
-      preferredAzurePowerShellVersion: 3.1.0
+      scriptPath: '$(System.DefaultWorkingDirectory)/$(ScriptDir)/$(Script)'
+      scriptArguments: '-ManagementGroupId $(ManagementGroupId) -OutputPath $(WikiDir) -CsvDelimiter "$(CsvDelimiter)" -AzureDevOpsWikiAsCode -SubscriptionQuotaIdWhitelist $(SubscriptionQuotaIdWhitelist)'
+      azurePowerShellVersion: latestVersion
     displayName: 'Run AzGovViz'
   - powershell: |
       write-host "#################################"
@@ -71,5 +85,5 @@ jobs:
       git config pull.rebase false
       git add --all
       git commit -m "wiki $executionDateTimeInternationalReadable ($currentTimeZone)"
-      git -c http.extraheader="AUTHORIZATION: bearer $(System.AccessToken)" push origin HEAD:master
+      git -c http.extraheader="AUTHORIZATION: bearer $(System.AccessToken)" push origin HEAD:$(Build.SourceBranchName)
     displayName: 'Push AzGovViz output to repository'
