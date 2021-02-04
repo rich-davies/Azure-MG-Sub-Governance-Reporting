@@ -27,7 +27,7 @@ trigger: none
 pr: none
 
 variables:
-  ServiceConnection: ALZ-mgmtgroup #permissions set? https://github.com/JulianHayward/Azure-MG-Sub-Governance-Reporting#required-permissions-in-azure 
+  ServiceConnection: RD-MG-ALZ #permissions set? https://github.com/JulianHayward/Azure-MG-Sub-Governance-Reporting#required-permissions-in-azure 
   ManagementGroupId: ALZ
   SubscriptionQuotaIdWhitelist: undefined
   WikiDir: wiki
