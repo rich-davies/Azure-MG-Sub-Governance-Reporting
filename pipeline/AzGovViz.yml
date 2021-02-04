@@ -27,8 +27,8 @@ trigger: none
 pr: none
 
 variables:
-  ServiceConnection: <YourServiceConnection> #permissions set? https://github.com/JulianHayward/Azure-MG-Sub-Governance-Reporting#required-permissions-in-azure 
-  ManagementGroupId: <YourManagementGroupId>
+  ServiceConnection: svcazrbacautomation2 #permissions set? https://github.com/JulianHayward/Azure-MG-Sub-Governance-Reporting#required-permissions-in-azure 
+  ManagementGroupId: ALZ
   SubscriptionQuotaIdWhitelist: undefined
   WikiDir: wiki
   CsvDelimiter: ;
